@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Report Issue</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: -apple-system, sans-serif; padding: 16px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); }
+    label { font-weight: 600; font-size: 14px; margin-top: 12px; display: block; }
+    input, select, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    button { width: 100%; padding: 12px; margin-top: 20px; background: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #fff); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h3>🔧 Submit Maintenance Request</h3>
+  <form id="issueForm">
+    <label>Flat / Unit Number</label>
+    <input type="text" id="flat_no" placeholder="e.g., Tower B - 402" required />
+
+    <label>Category</label>
+    <select id="category" required>
+      <option value="Plumbing">🚰 Plumbing / Water Leak</option>
+      <option value="Electrical">⚡ Electrical / Power</option>
+      <option value="Elevator">🛗 Elevator / Lift</option>
+      <option value="Housekeeping">🧹 Housekeeping / Cleaning</option>
+      <option value="Security">🛡️ Security / Intercom</option>
+    </select>
+
+    <label>Urgency Level</label>
+    <select id="urgency" required>
+      <option value="Routine">Routine (Within 24-48 hrs)</option>
+      <option value="Urgent">Urgent / Safety Hazard (Within 2-4 hrs)</option>
+    </select>
+
+    <label>Description</label>
+    <textarea id="description" rows="3" placeholder="Describe the issue..." required></textarea>
+
+    <button type="submit">Submit Ticket</button>
+  </form>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    document.getElementById('issueForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const payload = {
+        flat_no: document.getElementById('flat_no').value,
+        category: document.getElementById('category').value,
+        urgency: document.getElementById('urgency').value,
+        description: document.getElementById('description').value
+      };
+      tg.sendData(JSON.stringify(payload));
+    });
+  </script>
+</body>
+</html>
