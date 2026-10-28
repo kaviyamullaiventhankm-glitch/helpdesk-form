@@ -6,10 +6,11 @@
   <title>Report Issue</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { font-family: -apple-system, sans-serif; padding: 16px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); }
+    body { font-family: -apple-system, sans-serif; padding: 16px; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); }
     label { font-weight: 600; font-size: 14px; margin-top: 12px; display: block; }
     input, select, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-    button { width: 100%; padding: 12px; margin-top: 20px; background: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #fff); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    button { width: 100%; padding: 12px; margin-top: 20px; background: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #ffffff); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+    #status-msg { margin-top: 15px; font-size: 14px; text-align: center; }
   </style>
 </head>
 <body>
@@ -36,22 +37,55 @@
     <label>Description</label>
     <textarea id="description" rows="3" placeholder="Describe the issue..." required></textarea>
 
-    <button type="submit">Submit Ticket</button>
+    <button type="submit" id="submitBtn">Submit Ticket</button>
   </form>
 
+  <div id="status-msg"></div>
+
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    const tg = window.Telegram ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
 
     document.getElementById('issueForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const statusMsg = document.getElementById('status-msg');
+      
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Submitting...";
+
       const payload = {
         flat_no: document.getElementById('flat_no').value,
         category: document.getElementById('category').value,
         urgency: document.getElementById('urgency').value,
         description: document.getElementById('description').value
       };
-      tg.sendData(JSON.stringify(payload));
+
+      const jsonString = JSON.stringify(payload);
+
+      // Check if running inside Telegram WebApp environment
+      if (tg && typeof tg.sendData === 'function') {
+        try {
+          tg.sendData(jsonString);
+          statusMsg.style.color = "green";
+          statusMsg.innerText = "Submitted! Closing window...";
+          setTimeout(() => tg.close(), 1000);
+        } catch (err) {
+          statusMsg.style.color = "red";
+          statusMsg.innerText = "Error: " + err.message;
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Submit Ticket";
+        }
+      } else {
+        // Fallback alert if opened outside Telegram chat context
+        alert("Form submitted locally:\n" + jsonString + "\n\nNote: To send directly to your bot, open this form via the Telegram bot Menu or Chat button.");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit Ticket";
+      }
     });
   </script>
 </body>
