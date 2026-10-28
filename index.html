@@ -6,11 +6,13 @@
   <title>Report Issue</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { font-family: -apple-system, sans-serif; padding: 16px; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); }
-    label { font-weight: 600; font-size: 14px; margin-top: 12px; display: block; }
-    input, select, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-    button { width: 100%; padding: 12px; margin-top: 20px; background: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #ffffff); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
-    #status-msg { margin-top: 15px; font-size: 14px; text-align: center; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 16px; background: #ffffff; color: #222222; margin: 0; }
+    h3 { margin-top: 0; color: #1c2b36; }
+    label { font-weight: 600; font-size: 14px; margin-top: 14px; display: block; }
+    input, select, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #d2d6dc; border-radius: 8px; box-sizing: border-box; font-size: 14px; background: #fdfdfd; }
+    button { width: 100%; padding: 12px; margin-top: 20px; background: #2481cc; color: #ffffff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: background 0.2s; }
+    button:disabled { background: #9bbcd4; cursor: not-allowed; }
+    #status-msg { margin-top: 15px; font-size: 14px; text-align: center; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -49,7 +51,10 @@
       tg.expand();
     }
 
-    document.getElementById('issueForm').addEventListener('submit', function(e) {
+    // Extract Telegram User metadata if available
+    const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
+
+    document.getElementById('issueForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const submitBtn = document.getElementById('submitBtn');
@@ -57,32 +62,39 @@
       
       submitBtn.disabled = true;
       submitBtn.innerText = "Submitting...";
+      statusMsg.style.color = "#555";
+      statusMsg.innerText = "Sending details...";
 
       const payload = {
         flat_no: document.getElementById('flat_no').value,
         category: document.getElementById('category').value,
         urgency: document.getElementById('urgency').value,
-        description: document.getElementById('description').value
+        description: document.getElementById('description').value,
+        chat_id: tgUser.id || null,
+        resident_name: tgUser.first_name ? `${tgUser.first_name} ${tgUser.last_name || ''}`.trim() : "Resident"
       };
 
-      const jsonString = JSON.stringify(payload);
+      try {
+        // REPLACE THIS URL WITH YOUR N8N WEBHOOK URL
+        const response = await fetch('YOUR_N8N_WEBHOOK_URL_HERE', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      // Check if running inside Telegram WebApp environment
-      if (tg && typeof tg.sendData === 'function') {
-        try {
-          tg.sendData(jsonString);
+        if (response.ok) {
           statusMsg.style.color = "green";
-          statusMsg.innerText = "Submitted! Closing window...";
-          setTimeout(() => tg.close(), 1000);
-        } catch (err) {
-          statusMsg.style.color = "red";
-          statusMsg.innerText = "Error: " + err.message;
-          submitBtn.disabled = false;
-          submitBtn.innerText = "Submit Ticket";
+          statusMsg.innerText = "✅ Ticket submitted successfully!";
+          submitBtn.innerText = "Sent";
+          if (tg && typeof tg.close === 'function') {
+            setTimeout(() => tg.close(), 1200);
+          }
+        } else {
+          throw new Error("Server returned status " + response.status);
         }
-      } else {
-        // Fallback alert if opened outside Telegram chat context
-        alert("Form submitted locally:\n" + jsonString + "\n\nNote: To send directly to your bot, open this form via the Telegram bot Menu or Chat button.");
+      } catch (err) {
+        statusMsg.style.color = "red";
+        statusMsg.innerText = "Failed to submit: " + err.message;
         submitBtn.disabled = false;
         submitBtn.innerText = "Submit Ticket";
       }
