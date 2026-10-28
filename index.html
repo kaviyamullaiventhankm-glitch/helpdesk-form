@@ -76,7 +76,7 @@
 
       try {
         // REPLACE THIS URL WITH YOUR N8N WEBHOOK URL
-        const response = await fetch('YOUR_N8N_WEBHOOK_URL_HERE', {
+        const response = await fetch('https://s27.n8n.alexaiautomations.com/webhook-test/telegram-intake', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
